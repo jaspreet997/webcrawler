@@ -15,7 +15,7 @@ public class CrawlerController {
   CrawlerService crawlerService;
 
   @PostMapping("/crawlInternet")
-  public String crawlInternet(@RequestBody PageRequest pageRequest) throws InterruptedException {
+  public String crawlInternet(@RequestBody PageRequest pageRequest) {
     final CrawlerResponse crawl = crawlerService.crawl(pageRequest);
     return crawl.getResponse();
   }
