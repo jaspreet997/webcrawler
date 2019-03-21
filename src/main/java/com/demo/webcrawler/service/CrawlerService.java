@@ -1,51 +1,74 @@
 package com.demo.webcrawler.service;
 
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.springframework.stereotype.Component;
 import com.demo.webcrawler.controller.request.Page;
 import com.demo.webcrawler.controller.request.PageRequest;
 import com.demo.webcrawler.controller.response.CrawlerResponse;
-import com.google.common.collect.Iterables;
 
 @Component
 public class CrawlerService {
 
   public CrawlerResponse crawl(PageRequest pageRequest) {
     Set<String> visited = new HashSet<>();
-    Queue<String> queue = initQueue(pageRequest);
-
+    BlockingQueue<String> queue = initQueue(pageRequest);
     CrawlerResponse crawlerResponse = new CrawlerResponse();
+    ExecutorService executor = Executors.newFixedThreadPool(10);
+    Runnable worker = new Runnable() {
+      @Override
+      public void run() {
+        while (!queue.isEmpty()) {
+          String nextAddress = "";
+          try {
+            nextAddress = queue.take();
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+          if (visited.contains(nextAddress)) {
+            crawlerResponse.addSkip(nextAddress);
+          } else {
+            Page page = pageRequest.checkPage(nextAddress);
+            if (page != null) {
+              Page nextPage = page;
+              crawlerResponse.addSuccess(nextPage.getAddress());
+              visited.add(nextPage.getAddress());
+              List<String> links = nextPage.getLinks();
+              queue.addAll(links);
 
-    while (!queue.isEmpty()) {
-      String nextAddress = queue.remove();
-      if (visited.contains(nextAddress)) {
-        crawlerResponse.addSkip(nextAddress);
-      } else {
-        Page page = pageRequest.checkPage(nextAddress);
-        if (page != null) {
-          Page nextPage = page;
-          crawlerResponse.addSuccess(nextPage.getAddress());
-          visited.add(nextPage.getAddress());
-          List<String> links = nextPage.getLinks();
-          Iterables.addAll(queue, links);
-        } else {
-          crawlerResponse.addError(nextAddress);
+            } else {
+              crawlerResponse.addError(nextAddress);
+            }
+          }
         }
       }
+    };
+
+    while (!queue.isEmpty()) {
+      executor.submit(worker);
     }
+
+    executor.shutdown();
     return crawlerResponse;
   }
 
-  private Queue<String> initQueue(PageRequest pageRequest) {
-    Queue<String> queue = new LinkedList<>();
+  private BlockingQueue<String> initQueue(PageRequest pageRequest) {
+    BlockingQueue<String> queue = new LinkedBlockingQueue<>();
     List<Page> pages = pageRequest.getPages();
+
     if (!pages.isEmpty()) {
-      queue.add(pages.get(0).getAddress());
+      try {
+        queue.put(pages.get(0).getAddress());
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
     }
+
     return queue;
   }
 
