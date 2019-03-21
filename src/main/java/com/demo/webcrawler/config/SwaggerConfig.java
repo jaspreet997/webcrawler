@@ -21,6 +21,6 @@ public class SwaggerConfig {
 
   private ApiInfo apiInfo() {
     return new ApiInfoBuilder().title("WebCrawler APIs")
-        .description("This page lists all the rest apis in Payment Proxy").version("1").build();
+        .description("This page lists all the rest apis").version("1").build();
   }
 }
