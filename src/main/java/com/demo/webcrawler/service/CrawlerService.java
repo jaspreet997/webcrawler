@@ -24,16 +24,16 @@ public class CrawlerService {
       @Override
       public void run() {
         while (!queue.isEmpty()) {
-          String nextAddress = "";
+          String tempAddress = "";
           try {
-            nextAddress = queue.take();
+            tempAddress = queue.take();
           } catch (InterruptedException e) {
             e.printStackTrace();
           }
-          if (visited.contains(nextAddress)) {
-            crawlerResponse.addSkip(nextAddress);
+          if (visited.contains(tempAddress)) {
+            crawlerResponse.addSkip(tempAddress);
           } else {
-            Page page = pageRequest.checkPage(nextAddress);
+            Page page = pageRequest.checkPage(tempAddress);
             if (page != null) {
               Page nextPage = page;
               crawlerResponse.addSuccess(nextPage.getAddress());
@@ -42,7 +42,7 @@ public class CrawlerService {
               queue.addAll(links);
 
             } else {
-              crawlerResponse.addError(nextAddress);
+              crawlerResponse.addError(tempAddress);
             }
           }
         }
