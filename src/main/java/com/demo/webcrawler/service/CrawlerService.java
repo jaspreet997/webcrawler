@@ -60,7 +60,6 @@ public class CrawlerService {
   private BlockingQueue<String> initQueue(PageRequest pageRequest) {
     BlockingQueue<String> queue = new LinkedBlockingQueue<>();
     List<Page> pages = pageRequest.getPages();
-
     if (!pages.isEmpty()) {
       try {
         queue.put(pages.get(0).getAddress());
@@ -68,7 +67,6 @@ public class CrawlerService {
         e.printStackTrace();
       }
     }
-
     return queue;
   }
 
